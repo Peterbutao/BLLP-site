@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-static';
+import adapter from '@sveltejs/adapter-cloudflare';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -7,14 +7,12 @@ const config = {
 		runes: ({ filename }) => filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 	},
 	kit: {
-		// adapter-static is perfect for Cloudflare Pages (static hosting)
-		// All routes are prerendered (see src/routes/+layout.ts: prerender = true)
+		// adapter-cloudflare for Cloudflare Pages / Workers with static assets
+		// Works with `prerender = true` (src/routes/+layout.ts) — fully static site
+		// but deployed via Cloudflare's Workers runtime for edge caching & headers
 		adapter: adapter({
-			pages: 'build',
-			assets: 'build',
-			fallback: undefined, // no SPA fallback - 404 for unknown routes
-			precompress: false,
-			strict: true
+			// https://svelte.dev/docs/kit/adapter-cloudflare
+			// default handles both Pages + Workers; no extra config needed for static
 		})
 	}
 };

@@ -150,7 +150,7 @@
   }
 
   .worship-banner h2 {
-    font-size: clamp(3rem, 8vw, 5.5rem);
+    font-size: clamp(3.8rem, 10vw, 7.5rem);
     font-weight: 900;
     color: white;
     letter-spacing: 6px;
@@ -159,22 +159,22 @@
   }
 
   .night-text {
-    font-size: clamp(5rem, 14vw, 10rem);
+    font-size: clamp(6.5rem, 18vw, 13rem);
     font-weight: 900;
     color: var(--dark);
-    line-height: 0.95;
-    margin-top: -10px;
+    line-height: 0.9;
+    margin-top: -8px;
     letter-spacing: -3px;
     animation: fadeUp 1s ease-out 0.3s both;
   }
 
   .live-recording {
-    font-size: 1rem;
+    font-size: clamp(1rem, 2.5vw, 1.35rem);
     letter-spacing: 8px;
     text-transform: uppercase;
     color: var(--dark);
-    font-weight: 600;
-    margin-top: 5px;
+    font-weight: 700;
+    margin-top: 8px;
     animation: fadeUp 1s ease-out 0.5s both;
   }
 

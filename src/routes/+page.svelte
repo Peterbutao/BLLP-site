@@ -339,6 +339,34 @@
 		<br>
 		<br>
 		<div class="live-recording">(Live Recording)</div>
+		<div class="livestream-hero" aria-label="Livestream links">
+			<div class="livestream-label">
+				<span class="live-dot" aria-hidden="true"></span>
+				<span>Livestream — Watch live</span>
+			</div>
+			<div class="livestream-links">
+				<a
+					href="https://www.youtube.com/channel/UCYMH5vl1X_HMJWklswB47kA"
+					target="_blank"
+					rel="noopener"
+					class="livestream-btn youtube"
+					aria-label="Watch livestream on YouTube"
+				>
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.5 12.2c0-1.35-.11-2.35-.33-3.02a2.72 2.72 0 0 0-1.9-1.9C20.48 7.06 16.5 7 12 7s-8.48.06-9.27.28a2.72 2.72 0 0 0-1.9 1.9C.61 9.85.5 10.85.5 12.2s.11 2.35.33 3.02a2.72 2.72 0 0 0 1.9 1.9c.79.22 4.77.28 9.27.28s8.48-.06 9.27-.28a2.72 2.72 0 0 0 1.9-1.9c.22-.67.33-1.67.33-3.02Zm-13.1 3.1V8.9L16 12.2Z"/></svg>
+					YouTube
+				</a>
+				<a
+					href="https://www.facebook.com/lwcmediacityofeagles/"
+					target="_blank"
+					rel="noopener"
+					class="livestream-btn facebook"
+					aria-label="Watch livestream on Facebook"
+				>
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7h2.3l.35-2.7h-2.65V9.1c0-.78.22-1.31 1.34-1.31h1.42V5.4c-.25-.03-1.08-.11-2.05-.11-2.03 0-3.42 1.24-3.42 3.52v1.96H7.5V14h2.99v7h3.01Z"/></svg>
+					Facebook
+				</a>
+			</div>
+		</div>
 	</section>
 
 	<!-- Choir Section -->

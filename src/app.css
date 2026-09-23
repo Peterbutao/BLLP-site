@@ -620,13 +620,13 @@
     position: absolute;
     top: calc(100% + 8px);
     left: 0;
-    min-width: 240px;
+    min-width: 260px;
     background: white;
     border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.14);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.16);
     border: 1px solid #ece9e6;
     overflow: hidden;
-    z-index: 20;
+    z-index: 50;
     animation: fadeUp 0.2s ease-out both;
   }
 

@@ -45,6 +45,8 @@
 	}
 
 	function getOutlookCalendarUrl() {
+		// Build manually so path keeps slashes encoded as %2F which Outlook expects
+		const base = 'https://outlook.live.com/calendar/0/deeplink/compose';
 		const params = new URLSearchParams({
 			path: '/calendar/action/compose',
 			rrule: '',
@@ -54,11 +56,10 @@
 			startdt: EVENT_START_OUTLOOK,
 			enddt: EVENT_END_OUTLOOK
 		});
-		return `https://outlook.live.com/calendar/0/deeplink/compose?${params.toString()}`;
+		return `${base}?${params.toString()}`;
 	}
 
 	function getYahooCalendarUrl() {
-		// Yahoo expects UTC times without Z but with duration
 		const params = new URLSearchParams({
 			v: '60',
 			title: EVENT_TITLE,
@@ -70,35 +71,60 @@
 		return `https://calendar.yahoo.com/?${params.toString()}`;
 	}
 
-	function downloadICS() {
-		const ics = [
-			'BEGIN:VCALENDAR',
-			'VERSION:2.0',
-			'PRODID:-//Living Waters Church//Worship Night 2026//EN',
-			'CALSCALE:GREGORIAN',
-			'BEGIN:VEVENT',
-			`UID:worship-night-2026@worshipnight-livingwaters.pages.dev`,
-			`DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
-			`DTSTART:${EVENT_START_UTC}`,
-			`DTEND:${EVENT_END_UTC}`,
-			`SUMMARY:${EVENT_TITLE}`,
-			`DESCRIPTION:${EVENT_DESCRIPTION.replace(/\n/g, '\\n')}`,
-			`LOCATION:${EVENT_LOCATION}`,
-			'STATUS:CONFIRMED',
-			'END:VEVENT',
-			'END:VCALENDAR'
-		].join('\r\n');
+	function toggleCalendar(e: MouseEvent) {
+		e.stopPropagation();
+		showCalendar = !showCalendar;
+	}
 
-		const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = 'Worship-Night-2026-10-04.ics';
-		document.body.appendChild(a);
-		a.click();
-		a.remove();
-		URL.revokeObjectURL(url);
+	function closeCalendar() {
 		showCalendar = false;
+	}
+
+	function downloadICS() {
+		try {
+			const dtStamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+			// Escape per RFC5545
+			const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+			const ics = [
+				'BEGIN:VCALENDAR',
+				'VERSION:2.0',
+				'PRODID:-//Living Waters Church//Worship Night 2026//EN',
+				'CALSCALE:GREGORIAN',
+				'METHOD:PUBLISH',
+				'BEGIN:VEVENT',
+				`UID:worship-night-2026-${EVENT_START_UTC}@worshipnight-livingwaters.pages.dev`,
+				`DTSTAMP:${dtStamp}`,
+				`DTSTART:${EVENT_START_UTC}`,
+				`DTEND:${EVENT_END_UTC}`,
+				`SUMMARY:${esc(EVENT_TITLE)}`,
+				`DESCRIPTION:${esc(EVENT_DESCRIPTION)}`,
+				`LOCATION:${esc(EVENT_LOCATION)}`,
+				'STATUS:CONFIRMED',
+				'END:VEVENT',
+				'END:VCALENDAR'
+			].join('\r\n');
+
+			const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = 'Worship-Night-2026-10-04.ics';
+			a.style.display = 'none';
+			document.body.appendChild(a);
+			a.click();
+			// iOS fallback: open in new tab if download attribute unsupported
+			setTimeout(() => {
+				if (a.parentNode) a.remove();
+				URL.revokeObjectURL(url);
+			}, 1000);
+			showCalendar = false;
+		} catch (err) {
+			console.error('ICS download failed', err);
+			// Fallback: data URI
+			const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,');
+			const icsFallback = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Living Waters//EN\r\nBEGIN:VEVENT\r\nUID:worship-night@live\r\nDTSTART:${EVENT_START_UTC}\r\nDTEND:${EVENT_END_UTC}\r\nSUMMARY:${esc(EVENT_TITLE)}\r\nEND:VEVENT\r\nEND:VCALENDAR`;
+			window.open('data:text/calendar;charset=utf-8,' + encodeURIComponent(icsFallback), '_blank');
+		}
 	}
 
 	function updateCountdown() {
@@ -404,13 +430,13 @@
 				<button
 					type="button"
 					class="add-calendar-btn"
-					onclick={(e) => { e.stopPropagation(); showCalendar = !showCalendar; }}
+					onclick={toggleCalendar}
 					aria-expanded={showCalendar}
 					aria-haspopup="menu"
 				>
 					<svg class="cal-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path><path d="M12 14v6"></path><path d="M9 17h6"></path></svg>
 					Add to Calendar
-					<svg class="cal-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity:0.6; transform: rotate({showCalendar ? '180deg' : '0deg'}); transition: transform 0.2s ease;"><path d="m6 9 6 6 6-6"></path></svg>
+					<svg class="cal-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity:0.6; transition: transform 0.2s ease;" style:transform="rotate({showCalendar ? 180 : 0}deg)"><path d="m6 9 6 6 6-6"></path></svg>
 				</button>
 				{#if showCalendar}
 					<div class="calendar-dropdown" role="menu">
@@ -420,7 +446,7 @@
 							rel="noopener"
 							class="cal-option"
 							role="menuitem"
-							onclick={() => (showCalendar = false)}
+							onclick={closeCalendar}
 						>
 							<svg class="cal-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>
 							<span>Google Calendar</span>
@@ -432,7 +458,7 @@
 							rel="noopener"
 							class="cal-option"
 							role="menuitem"
-							onclick={() => (showCalendar = false)}
+							onclick={closeCalendar}
 						>
 							<svg class="cal-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>
 							<span>Outlook.com</span>
@@ -444,7 +470,7 @@
 							rel="noopener"
 							class="cal-option"
 							role="menuitem"
-							onclick={() => (showCalendar = false)}
+							onclick={closeCalendar}
 						>
 							<svg class="cal-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>
 							<span>Yahoo Calendar</span>

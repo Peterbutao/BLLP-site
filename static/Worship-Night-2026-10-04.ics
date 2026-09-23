@@ -1,0 +1,16 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Living Waters Church//Worship Night 2026//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:worship-night-2026-20261004T153000Z@worshipnight-livingwaters.pages.dev
+DTSTAMP:20260923T000000Z
+DTSTART:20261004T153000Z
+DTEND:20261004T190000Z
+SUMMARY:Worship Night (Live Recording) — Living Waters Church International
+DESCRIPTION:Join us for Worship Night (Live Recording) at Living Waters Church International — Bwaila City of Eagles\, Lilongwe. Sunday 4th Oct 2026\, 5:30PM – 9:00PM. Let everything that has breath praise the Lord!
+LOCATION:Living Waters Church International — Bwaila City of Eagles\, Lilongwe\, Malawi
+STATUS:CONFIRMED
+END:VEVENT
+END:VCALENDAR

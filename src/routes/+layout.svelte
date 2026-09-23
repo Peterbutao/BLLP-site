@@ -7,7 +7,9 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fontsource-inter@5.0.0/index.min.css" />
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 	<title>Worship Night (Live Recording) — Living Waters Church International — 4 Oct 2026</title>
 	<meta name="description" content="Join us for Worship Night (Live Recording) at Living Waters Church International — Bwaila City of Eagles, Lilongwe. Sunday 4th Oct 2026, 5:30PM – 9:00PM. Let everything that has breath praise the Lord!" />
 	<meta name="keywords" content="Worship Night, Living Waters Church, Bwaila, Lilongwe, Malawi, Live Recording, Gospel, Choir" />

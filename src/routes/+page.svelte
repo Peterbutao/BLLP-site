@@ -10,6 +10,7 @@
 	let rsvpActive = $state(false);
 	let locateText = $state('Use My Location');
 	let locating = $state(false);
+	let showCalendar = $state(false);
 
 	let countdownInterval: ReturnType<typeof setInterval> | undefined;
 	let map: any = null;
@@ -21,6 +22,84 @@
 	const MAPS_SHORT_URL = 'https://maps.app.goo.gl/yGSBEXCcB2UogxH27';
 	const whatsappUrl =
 		'https://wa.me/265882066860?text=Hello%20Jemimah%20Mhango%2C%20I%20would%20like%20more%20details%20about%20the%20Worship%20Night%20on%204th%20Oct%202026%20at%20Living%20Waters%20Church%20International.';
+	const EVENT_TITLE = 'Worship Night (Live Recording) — Living Waters Church International';
+	const EVENT_LOCATION = 'Living Waters Church International — Bwaila City of Eagles, Lilongwe, Malawi';
+	const EVENT_DESCRIPTION =
+		'Join us for Worship Night (Live Recording) at Living Waters Church International — Bwaila City of Eagles, Lilongwe. Sunday 4th Oct 2026, 5:30PM – 9:00PM. Let everything that has breath praise the Lord!';
+
+	// Calendar helpers — Malawi is CAT (UTC+2)
+	const EVENT_START_UTC = '20261004T153000Z';
+	const EVENT_END_UTC = '20261004T190000Z';
+	const EVENT_START_OUTLOOK = '2026-10-04T15:30:00Z';
+	const EVENT_END_OUTLOOK = '2026-10-04T19:00:00Z';
+
+	function getGoogleCalendarUrl() {
+		const params = new URLSearchParams({
+			action: 'TEMPLATE',
+			text: EVENT_TITLE,
+			dates: `${EVENT_START_UTC}/${EVENT_END_UTC}`,
+			details: EVENT_DESCRIPTION,
+			location: EVENT_LOCATION
+		});
+		return `https://calendar.google.com/calendar/render?${params.toString()}`;
+	}
+
+	function getOutlookCalendarUrl() {
+		const params = new URLSearchParams({
+			path: '/calendar/action/compose',
+			rrule: '',
+			subject: EVENT_TITLE,
+			body: EVENT_DESCRIPTION,
+			location: EVENT_LOCATION,
+			startdt: EVENT_START_OUTLOOK,
+			enddt: EVENT_END_OUTLOOK
+		});
+		return `https://outlook.live.com/calendar/0/deeplink/compose?${params.toString()}`;
+	}
+
+	function getYahooCalendarUrl() {
+		// Yahoo expects UTC times without Z but with duration
+		const params = new URLSearchParams({
+			v: '60',
+			title: EVENT_TITLE,
+			st: '20261004T153000Z',
+			et: '20261004T190000Z',
+			desc: EVENT_DESCRIPTION,
+			in_loc: EVENT_LOCATION
+		});
+		return `https://calendar.yahoo.com/?${params.toString()}`;
+	}
+
+	function downloadICS() {
+		const ics = [
+			'BEGIN:VCALENDAR',
+			'VERSION:2.0',
+			'PRODID:-//Living Waters Church//Worship Night 2026//EN',
+			'CALSCALE:GREGORIAN',
+			'BEGIN:VEVENT',
+			`UID:worship-night-2026@worshipnight-livingwaters.pages.dev`,
+			`DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+			`DTSTART:${EVENT_START_UTC}`,
+			`DTEND:${EVENT_END_UTC}`,
+			`SUMMARY:${EVENT_TITLE}`,
+			`DESCRIPTION:${EVENT_DESCRIPTION.replace(/\n/g, '\\n')}`,
+			`LOCATION:${EVENT_LOCATION}`,
+			'STATUS:CONFIRMED',
+			'END:VEVENT',
+			'END:VCALENDAR'
+		].join('\r\n');
+
+		const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = 'Worship-Night-2026-10-04.ics';
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		URL.revokeObjectURL(url);
+		showCalendar = false;
+	}
 
 	function updateCountdown() {
 		const eventDate = new Date('2026-10-04T17:30:00');
@@ -80,7 +159,7 @@
 
 			const churchIcon = L.divIcon({
 				className: 'custom-marker',
-				html: '<div style="background:linear-gradient(135deg,#F26522,#F7C948);width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center"><span style="transform:rotate(45deg);font-size:18px;line-height:1">✝</span></div>',
+				html: '<div style="background:linear-gradient(135deg,#F26522,#F7C948);width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center"><span style="transform:rotate(45deg);display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M8 8h8"/></svg></span></div>',
 				iconSize: [36, 36],
 				iconAnchor: [18, 36],
 				popupAnchor: [0, -36]
@@ -209,9 +288,16 @@
 		// Leaflet
 		initMap();
 
+		const onDocClick = (e: MouseEvent) => {
+			const target = e.target as HTMLElement;
+			if (!target.closest('.calendar-actions')) showCalendar = false;
+		};
+		document.addEventListener('click', onDocClick);
+
 		return () => {
 			if (countdownInterval) clearInterval(countdownInterval);
 			window.removeEventListener('scroll', onScroll);
+			document.removeEventListener('click', onDocClick);
 			observer.disconnect();
 			if (map) map.remove();
 		};
@@ -286,6 +372,63 @@
 				<span class="orange">Sunday</span>
 				<span class="blue small">4th Oct<br />2026</span>
 			</div>
+			<div class="calendar-actions">
+				<button
+					type="button"
+					class="add-calendar-btn"
+					onclick={(e) => { e.stopPropagation(); showCalendar = !showCalendar; }}
+					aria-expanded={showCalendar}
+					aria-haspopup="menu"
+				>
+					<svg class="cal-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path><path d="M12 14v6"></path><path d="M9 17h6"></path></svg>
+					Add to Calendar
+					<svg class="cal-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity:0.6; transform: rotate({showCalendar ? '180deg' : '0deg'}); transition: transform 0.2s ease;"><path d="m6 9 6 6 6-6"></path></svg>
+				</button>
+				{#if showCalendar}
+					<div class="calendar-dropdown" role="menu">
+						<a
+							href={getGoogleCalendarUrl()}
+							target="_blank"
+							rel="noopener"
+							class="cal-option"
+							role="menuitem"
+							onclick={() => (showCalendar = false)}
+						>
+							<svg class="cal-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>
+							<span>Google Calendar</span>
+							<svg class="cal-external" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg>
+						</a>
+						<a
+							href={getOutlookCalendarUrl()}
+							target="_blank"
+							rel="noopener"
+							class="cal-option"
+							role="menuitem"
+							onclick={() => (showCalendar = false)}
+						>
+							<svg class="cal-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>
+							<span>Outlook.com</span>
+							<svg class="cal-external" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg>
+						</a>
+						<a
+							href={getYahooCalendarUrl()}
+							target="_blank"
+							rel="noopener"
+							class="cal-option"
+							role="menuitem"
+							onclick={() => (showCalendar = false)}
+						>
+							<svg class="cal-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>
+							<span>Yahoo Calendar</span>
+							<svg class="cal-external" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg>
+						</a>
+						<button type="button" class="cal-option" role="menuitem" onclick={downloadICS}>
+							<svg class="cal-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"></path><path d="M9 12 12 15 15 12"></path><path d="M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"></path></svg>
+							<span>Apple / .ics Download</span>
+						</button>
+					</div>
+				{/if}
+			</div>
 		</div>
 		<div class="detail-card">
 			<div class="detail-label">From</div>
@@ -343,9 +486,18 @@
 		<div class="map-hint">Drag to pan &bull; Scroll to zoom &bull; Tap marker for directions</div>
 		<div class="map-actions">
 			<button type="button" class="map-btn secondary" onclick={handleLocate} disabled={locating} style="cursor:pointer; border:2px solid var(--blue);">
-				{#if locating}Locating...{:else}◉ {locateText}{/if}
+				{#if locating}
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+					Locating...
+				{:else}
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="M2 12h2"></path><path d="M20 12h2"></path></svg>
+					{locateText}
+				{/if}
 			</button>
-			<a href={MAPS_SHORT_URL} target="_blank" rel="noopener" class="map-btn secondary"> Open in Google Maps </a>
+			<a href={MAPS_SHORT_URL} target="_blank" rel="noopener" class="map-btn secondary">
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+				Open in Google Maps
+			</a>
 		</div>
 	</section>
 
